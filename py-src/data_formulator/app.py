@@ -10,8 +10,9 @@ mimetypes.add_type('application/javascript', '.js')
 mimetypes.add_type('application/javascript', '.mjs')
 
 import flask
-from flask import Flask, request, send_from_directory, session
+from flask import Flask, request, send_from_directory, session, jsonify
 from flask import stream_with_context, Response
+from flask_session import Session
 
 import webbrowser
 import threading
@@ -29,6 +30,10 @@ from vega_datasets import data as vega_data
 from dotenv import load_dotenv
 import secrets
 import base64
+
+# Import authentication service
+from data_formulator.auth_service import AuthService
+
 APP_ROOT = Path(os.path.join(Path(__file__).parent)).absolute()
 
 import os
@@ -40,6 +45,16 @@ from data_formulator.agent_routes import agent_bp
 
 app = Flask(__name__, static_url_path='', static_folder=os.path.join(APP_ROOT, "dist"))
 app.secret_key = secrets.token_hex(16)  # Generate a random secret key for sessions
+
+# Configure session
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['SESSION_PERMANENT'] = False
+app.config['SESSION_USE_SIGNER'] = True
+app.config['SESSION_KEY_PREFIX'] = 'dax:'
+Session(app)
+
+# Initialize authentication service
+auth_service = AuthService()
 
 class CustomJSONEncoder(json.JSONEncoder):
     def default(self, obj):
@@ -160,6 +175,113 @@ def page_not_found(e):
     # your processing here
     logger.info(app.static_folder)
     return send_from_directory(app.static_folder, "index.html") #'Hello 404!' #send_from_directory(app.static_folder, "index.html")
+
+###### Authentication endpoints ######
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """Login endpoint for username/password authentication"""
+    if not request.is_json:
+        return jsonify({'success': False, 'message': 'Content-Type must be application/json'}), 400
+    
+    data = request.get_json()
+    username = data.get('username', '').strip()
+    password = data.get('password', '')
+    
+    if not username or not password:
+        return jsonify({'success': False, 'message': 'Username and password are required'}), 400
+    
+    try:
+        user_info = auth_service.verify_user(username, password)
+        
+        if user_info:
+            # Store user info in session
+            session['authenticated'] = True
+            session['user_id'] = user_info['id']
+            session['username'] = user_info['username']
+            session['login_time'] = datetime.datetime.now().isoformat()
+            session.permanent = True
+            
+            return jsonify({
+                'success': True,
+                'message': 'Login successful',
+                'user': {
+                    'id': user_info['id'],
+                    'username': user_info['username'],
+                    'login_time': session['login_time']
+                }
+            })
+        else:
+            return jsonify({'success': False, 'message': 'Invalid username or password'}), 401
+            
+    except Exception as e:
+        logger.error(f"Login error: {e}")
+        return jsonify({'success': False, 'message': 'Authentication service error'}), 500
+
+@app.route('/api/auth/logout', methods=['POST'])
+def logout():
+    """Logout endpoint to clear session"""
+    session.clear()
+    return jsonify({'success': True, 'message': 'Logged out successfully'})
+
+@app.route('/api/auth/verify', methods=['GET'])
+def verify_auth():
+    """Verify if user is authenticated"""
+    if session.get('authenticated'):
+        return jsonify({
+            'authenticated': True,
+            'user': {
+                'id': session.get('user_id'),
+                'username': session.get('username'),
+                'login_time': session.get('login_time')
+            }
+        })
+    else:
+        return jsonify({'authenticated': False})
+
+@app.route('/api/auth/check-table', methods=['GET'])
+def check_auth_table():
+    """Debug endpoint to check database table structure"""
+    try:
+        table_info = auth_service.check_table_structure()
+        return jsonify(table_info)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/auth/create-test-user', methods=['POST'])
+def create_test_user():
+    """Create a test user - for development only"""
+    if not request.is_json:
+        return jsonify({'success': False, 'message': 'Content-Type must be application/json'}), 400
+    
+    data = request.get_json()
+    username = data.get('username', '').strip()
+    password = data.get('password', '')
+    
+    if not username or not password:
+        return jsonify({'success': False, 'message': 'Username and password are required'}), 400
+    
+    try:
+        success = auth_service.create_user(username, password)
+        if success:
+            return jsonify({'success': True, 'message': f'Test user {username} created successfully'})
+        else:
+            return jsonify({'success': False, 'message': 'User already exists or creation failed'}), 400
+    except Exception as e:
+        logger.error(f"User creation error: {e}")
+        return jsonify({'success': False, 'message': 'User creation failed'}), 500
+
+# Authentication middleware
+def require_auth():
+    """Decorator to require authentication for protected routes"""
+    def decorator(f):
+        def decorated_function(*args, **kwargs):
+            if not session.get('authenticated'):
+                return jsonify({'error': 'Authentication required'}), 401
+            return f(*args, **kwargs)
+        decorated_function.__name__ = f.__name__
+        return decorated_function
+    return decorator
 
 ###### test functions ######
 

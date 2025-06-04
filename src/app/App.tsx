@@ -37,6 +37,7 @@ import {
     Menu,
     MenuItem,
     TextField,
+    CircularProgress,
 } from '@mui/material';
 
 
@@ -72,6 +73,10 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import DownloadIcon from '@mui/icons-material/Download';
 import { DBTableManager, DBTableSelectionDialog, handleDBDownload } from '../views/DBTableManager';
 import CloudQueueIcon from '@mui/icons-material/CloudQueue';
+
+// Authentication imports
+import { useAuth } from '../hooks/useAuth';
+import { Login } from '../components/Login';
 
 const AppBar = styled(MuiAppBar)(({ theme }) => ({
     color: 'black',
@@ -171,7 +176,7 @@ export const ExportStateButton: React.FC<{}> = ({ }) => {
 
 //type AppProps = ConnectedProps<typeof connector>;
 
-export const toolName = "Data Formulator"
+export const toolName = "DAX"
 
 export interface AppFCProps {
 }
@@ -281,44 +286,62 @@ const SessionMenu: React.FC = () => {
 };
 
 const ResetDialog: React.FC = () => {
+    const dispatch = useDispatch<AppDispatch>();
     const [open, setOpen] = useState(false);
-    const dispatch = useDispatch();
+
+    const handleReset = () => {
+        dispatch(dfActions.resetState());
+        setOpen(false);
+    };
 
     return (
         <>
-            <Button 
-                variant="text" 
-                onClick={() => setOpen(true)} 
-                endIcon={<PowerSettingsNewIcon />}
+            <Button
+                variant="text"
+                onClick={() => setOpen(true)}
+                sx={{ textTransform: 'none' }}
+                color="error"
+                startIcon={<ClearIcon />}
             >
-                Reset session
+                Reset
             </Button>
-            <Dialog onClose={() => setOpen(false)} open={open}>
-                <DialogTitle sx={{ display: "flex", alignItems: "center" }}>Reset Session?</DialogTitle>
+            <Dialog open={open} onClose={() => setOpen(false)}>
+                <DialogTitle>Reset Session</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
-                        <Typography>All unexported content (charts, derived data, concepts) will be lost upon reset.</Typography>
+                        Are you sure you want to reset the current session? This will clear all data and charts.
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions>
-                    <Button 
-                        onClick={() => { 
-                            dispatch(dfActions.resetState()); 
-                            setOpen(false);
-                            
-                            // Add a delay to ensure the state has been reset before reloading
-                            setTimeout(() => {
-                                window.location.reload();
-                            }, 250); // 250ms should be enough for state update
-                        }} 
-                        endIcon={<PowerSettingsNewIcon />}
-                    >
-                        reset session 
+                    <Button onClick={() => setOpen(false)}>Cancel</Button>
+                    <Button onClick={handleReset} color="error" autoFocus>
+                        Reset
                     </Button>
-                    <Button onClick={() => setOpen(false)}>cancel</Button>
                 </DialogActions>
             </Dialog>
         </>
+    );
+};
+
+const LogoutButton: React.FC = () => {
+    const { logout, user } = useAuth();
+    
+    const handleLogout = async () => {
+        await logout();
+    };
+
+    return (
+        <Tooltip title={`Logged in as ${user?.username || 'User'}`}>
+            <Button
+                variant="text"
+                onClick={handleLogout}
+                sx={{ textTransform: 'none' }}
+                color="inherit"
+                startIcon={<PowerSettingsNewIcon />}
+            >
+                Logout
+            </Button>
+        </Tooltip>
     );
 };
 
@@ -349,7 +372,7 @@ const ConfigDialog: React.FC = () => {
                 </Box>
             </Button>
             <Dialog onClose={() => setOpen(false)} open={open}>
-                <DialogTitle>Data Formulator Configuration</DialogTitle>
+                <DialogTitle>DAX Configuration</DialogTitle>
                 <DialogContent>
                     <DialogContentText>
                         <Box sx={{ 
@@ -495,6 +518,9 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
     const tables = useSelector((state: DataFormulatorState) => state.tables);
     const sessionId = useSelector((state: DataFormulatorState) => state.sessionId);
 
+    // Authentication
+    const { user, isAuthenticated, isLoading, login, logout } = useAuth();
+
     // if the user has logged in
     const [userInfo, setUserInfo] = useState<{ name: string, userId: string } | undefined>(undefined);
 
@@ -520,31 +546,33 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
     }, []);
 
     useEffect(() => {
-        fetch('/.auth/me')
-            .then(function (response) { return response.json(); })
-            .then(function (result) {
-                if (Array.isArray(result) && result.length > 0) {
-                    let authInfo = result[0];
-                    let userInfo = {
-                        name: authInfo['user_claims'].find((item: any) => item.typ == 'name')?.val || '',
-                        userId: authInfo['user_id']
-                    }
-                    setUserInfo(userInfo);
-                    // console.log("logging info")
-                    // console.log(userInfo);
-                }
+        // Only proceed with initialization if authenticated
+        if (isAuthenticated) {
+            document.title = toolName;
+            dispatch(fetchAvailableModels());
+            dispatch(getSessionId());
+        }
+    }, [isAuthenticated]);
 
-            }).catch(err => {
-                //user is not logged in, do not show logout button
-                //console.error(err)
-            });
-    }, [])
+    // Show loading spinner while checking authentication
+    if (isLoading) {
+        return (
+            <Box sx={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                alignItems: 'center', 
+                height: '100vh',
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+            }}>
+                <CircularProgress size={60} sx={{ color: 'white' }} />
+            </Box>
+        );
+    }
 
-    useEffect(() => {
-        document.title = toolName;
-        dispatch(fetchAvailableModels());
-        dispatch(getSessionId());
-    }, []);
+    // Show login page if not authenticated
+    if (!isAuthenticated) {
+        return <Login onLoginSuccess={login} />;
+    }
 
     let theme = createTheme({
         typography: {
@@ -644,6 +672,7 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                     </Typography>
                     <Divider orientation="vertical" variant="middle" flexItem />
                     <ResetDialog />
+                    <LogoutButton />
                     <Popup popupConfig={popupConfig} appConfig={appConfig} table={tables[0]} />
                 </Box>
             </Toolbar>

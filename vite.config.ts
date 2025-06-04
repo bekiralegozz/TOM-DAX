@@ -16,7 +16,7 @@ export default defineConfig({
     outDir: path.join(__dirname, 'py-src', 'data_formulator', "dist"),
     rollupOptions: {
       output: {
-        entryFileNames: `DataFormulator.js`,  // specific name for the main JS bundle
+        entryFileNames: `DAX.js`,  // specific name for the main JS bundle
         chunkFileNames: `assets/[name]-[hash].js`, // keep default naming for chunks
         assetFileNames: `assets/[name]-[hash].[ext]` // keep default naming for other assets
       }

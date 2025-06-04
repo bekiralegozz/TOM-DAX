@@ -9,13 +9,7 @@ openai
 azure-identity
 azure-kusto-data
 azure-keyvault-secrets
-azure-kusto-data
-azure-storage-blob
 python-dotenv
 vega_datasets
 litellm
 duckdb
-boto3
-pyodbc
-psycopg2-binary
-flask-session
