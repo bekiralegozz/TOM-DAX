@@ -55,7 +55,11 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         setLoading(true);
         setError('');
 
+        console.log('🔍 Login attempt started');
+        console.log('📡 API Endpoint:', API_ENDPOINTS.AUTH.LOGIN);
+
         try {
+            console.log('🚀 Sending login request...');
             const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
                 method: 'POST',
                 headers: {
@@ -65,7 +69,15 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 credentials: 'include'
             });
 
+            console.log('📨 Response received:', response.status, response.statusText);
+            console.log('📨 Response headers:', [...response.headers.entries()]);
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
             const data = await response.json();
+            console.log('✅ Response data:', data);
 
             if (data.success) {
                 onLoginSuccess(data.user);
@@ -73,8 +85,11 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 setError(data.message || 'Login failed');
             }
         } catch (err) {
+            console.error('❌ Login error details:', err);
+            console.error('❌ Error type:', typeof err);
+            console.error('❌ Error message:', err instanceof Error ? err.message : String(err));
+            
             setError('Network error. Please try again.');
-            console.error('Login error:', err);
         } finally {
             setLoading(false);
         }
