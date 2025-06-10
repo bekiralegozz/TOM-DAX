@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { API_ENDPOINTS } from '../config/api';
 
 interface User {
     id: number;
@@ -28,7 +29,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const checkAuth = async () => {
         try {
-            const response = await fetch('/api/auth/verify', {
+            const response = await fetch(API_ENDPOINTS.AUTH.VERIFY, {
                 credentials: 'include'
             });
             const data = await response.json();
@@ -56,7 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const logout = async () => {
         try {
-            await fetch('/api/auth/logout', {
+            await fetch(API_ENDPOINTS.AUTH.LOGOUT, {
                 method: 'POST',
                 credentials: 'include'
             });

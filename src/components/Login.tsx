@@ -10,6 +10,7 @@ import {
     CircularProgress
 } from '@mui/material';
 import { styled } from '@mui/material/styles';
+import { API_ENDPOINTS } from '../config/api';
 
 const LoginContainer = styled(Container)(({ theme }) => ({
     display: 'flex',
@@ -55,7 +56,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
         setError('');
 
         try {
-            const response = await fetch('/api/auth/login', {
+            const response = await fetch(API_ENDPOINTS.AUTH.LOGIN, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -154,7 +155,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                     </Button>
                     
                     <Typography variant="body2" color="text.secondary" align="center">
-                        Powered by DAX Analytics Platform
+                        Powered by Bekir Alegoz
                     </Typography>
                 </Box>
             </LoginPaper>
