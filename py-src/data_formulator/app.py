@@ -49,7 +49,16 @@ app.secret_key = secrets.token_hex(16)  # Generate a random secret key for sessi
 
 # Configure CORS for cross-origin requests
 CORS(app, 
-     origins=['http://localhost:3000', 'http://10.20.1.129:3000', 'http://127.0.0.1:3000'], 
+     origins=[
+         'http://localhost:3000', 
+         'http://10.20.1.129:3000', 
+         'http://127.0.0.1:3000',
+         'http://10.20.1.129:5000',  # Backend and frontend on same server/port
+         'http://10.20.1.129',       # Nginx proxy (port 80)
+         'http://10.20.1.129:80',    # Nginx proxy explicit
+         'http://10.20.1.129:5173',  # Frontend dev server (Vite)
+         'http://localhost:5173'     # Local frontend dev server
+     ], 
      supports_credentials=True,
      allow_headers=['Content-Type', 'Authorization'],
      methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
