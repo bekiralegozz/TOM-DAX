@@ -38,6 +38,9 @@ import AnchorIcon from '@mui/icons-material/Anchor';
 import PanoramaFishEyeIcon from '@mui/icons-material/PanoramaFishEye';
 import InsightsIcon from '@mui/icons-material/Insights';
 import CheckIcon from '@mui/icons-material/Check';
+import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import UnfoldLessIcon from '@mui/icons-material/UnfoldLess';
+import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore';
 
 import _ from 'lodash';
 import { getChartTemplate } from '../components/ChartTemplates';
@@ -504,16 +507,41 @@ let SingleThreadView: FC<{
         content = w(tableElementList, triggerCards, "")
 
         return <Box sx={{ ...sx, '& .selected-card': { border: `2px solid ${theme.palette.primary.light}` } }} data-thread-index={threadIdx}>
-            <Box sx={{ display: 'flex', direction: 'ltr', margin: 1 }}>
-                <Divider flexItem sx={{
-                    margin: 'auto',
-                    "& .MuiDivider-wrapper": { display: 'flex', flexDirection: 'row' },
-                    "&::before, &::after": { borderColor: 'darkgray', borderWidth: '2px', width: 50 },
+            <Box sx={{ display: 'flex', direction: 'ltr', mb: 2, alignItems: 'center' }}>
+                <Box sx={{
+                    background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                    borderRadius: 2,
+                    px: 2,
+                    py: 0.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
                 }}>
-                    <Typography sx={{ fontSize: "10px", fontWeight: 'bold', color: 'text.secondary', textTransform: 'none' }}>
-                        {`thread - ${threadIdx + 1}`}
+                    <Box sx={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: 'rgba(255, 255, 255, 0.8)',
+                        animation: 'pulse 2s ease-in-out infinite'
+                    }} />
+                    <Typography sx={{ 
+                        fontSize: "12px", 
+                        fontWeight: 700, 
+                        color: 'white',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.5px'
+                    }}>
+                        Thread {threadIdx + 1}
                     </Typography>
-                </Divider>
+                </Box>
+                <Box sx={{
+                    flex: 1,
+                    height: '2px',
+                    background: 'linear-gradient(90deg, rgba(102, 126, 234, 0.5) 0%, transparent 100%)',
+                    ml: 2,
+                    borderRadius: 1
+                }} />
             </Box>
             <div style={{ padding: '2px 4px 2px 4px', marginTop: 0, marginBottom: '8px', direction: 'ltr' }}>
                 {originTableIdOfThread && <Box sx={{ direction: 'ltr' }}>
@@ -601,6 +629,7 @@ export const DataThread: FC<{}> = function ({ }) {
     const conceptShelfItems = useSelector((state: DataFormulatorState) => state.conceptShelfItems);
 
     let [threadDrawerOpen, setThreadDrawerOpen] = useState<boolean>(false);
+    let [headerCollapsed, setHeaderCollapsed] = useState<boolean>(false);
 
     const scrollRef = useRef<null | HTMLDivElement>(null)
 
@@ -745,13 +774,27 @@ export const DataThread: FC<{}> = function ({ }) {
     let drawerOpen = leafTables.length > 1 && threadDrawerOpen;
     let threadDrawerWidth = Math.max(Math.min(600, leafTables.length * 200), 212)
 
-    let view = <Box width={drawerOpen ? threadDrawerWidth + 12 : 224} sx={{ 
+    let view = <Box width={drawerOpen ? threadDrawerWidth + 12 : 240} sx={{ 
         overflowY: 'auto',
         position: 'relative',
         display: 'flex', 
         flexDirection: drawerOpen ? 'row-reverse' : 'column',
         minHeight: '100%',
         transition: 'all 0.3s ease',
+        '&::-webkit-scrollbar': {
+            width: '6px',
+        },
+        '&::-webkit-scrollbar-track': {
+            background: 'rgba(0, 0, 0, 0.1)',
+            borderRadius: '3px',
+        },
+        '&::-webkit-scrollbar-thumb': {
+            background: 'rgba(102, 126, 234, 0.3)',
+            borderRadius: '3px',
+            '&:hover': {
+                background: 'rgba(102, 126, 234, 0.5)',
+            }
+        }
     }}>
         {leafTables.map((lt, i) => {
             let usedIntermediateTableIds = leafTables.slice(0, i)
@@ -764,31 +807,63 @@ export const DataThread: FC<{}> = function ({ }) {
                 chartElements={chartElements} 
                 usedIntermediateTableIds={usedIntermediateTableIds} 
                 sx={{
-                    backgroundColor: (i % 2 == 1 ? "rgba(0, 0, 0, 0.03)" : 'white'), 
-                    padding: '8px 8px',
+                    background: i % 2 === 1 
+                        ? 'linear-gradient(135deg, rgba(102, 126, 234, 0.08) 0%, rgba(118, 75, 162, 0.05) 100%)' 
+                        : 'rgba(255, 255, 255, 0.7)', 
+                    backdropFilter: 'blur(5px)',
+                    margin: '4px',
+                    padding: '12px',
+                    borderRadius: 3,
+                    border: '1px solid rgba(102, 126, 234, 0.1)',
+                    boxShadow: '0 4px 20px rgba(0, 0, 0, 0.08)',
                     flex: drawerOpen ? 1 : 'none',
                     display: 'flex',
                     flexDirection: 'column',
-                    height: 'calc(100% - 16px)',
-                    width: '208px', 
+                    minHeight: 'calc(100% - 16px)',
+                    width: drawerOpen ? 'auto' : '224px', 
                     transition: 'all 0.3s ease',
+                    position: 'relative',
+                    '&:hover': {
+                        transform: 'translateY(-2px)',
+                        boxShadow: '0 8px 30px rgba(102, 126, 234, 0.15)',
+                        border: '1px solid rgba(102, 126, 234, 0.2)'
+                    }
                 }} />
         })}
     </Box>
 
 
-    let jumpButtonsDrawerOpen = <ButtonGroup size="small" color="primary">
-        {_.chunk(Array.from({length: leafTables.length}, (_, i) => i), 3).map((group, groupIdx) => {
+    let jumpButtonsDrawerOpen = <>
+        {_.chunk(Array.from({length: leafTables.length}, (_, i) => i), drawerOpen ? 4 : 5).map((group, groupIdx) => {
             const startNum = group[0] + 1;
             const endNum = group[group.length - 1] + 1;
             const label = startNum === endNum ? `${startNum}` : `${startNum}-${endNum}`;
             
             return (
                 <Tooltip key={`thread-nav-group-${groupIdx}`} title={`Jump to thread${startNum === endNum ? '' : 's'} ${label}`}>
-                    <IconButton
+                    <Button
                         size="small"
-                        color="primary"
-                        sx={{ fontSize: '12px' }}
+                        variant="outlined"
+                        sx={{ 
+                            fontSize: '10px',
+                            fontWeight: 600,
+                            minWidth: '32px',
+                            height: '24px',
+                            borderRadius: 1.5,
+                            borderColor: 'rgba(102, 126, 234, 0.3)',
+                            color: '#667eea',
+                            background: 'rgba(255, 255, 255, 0.8)',
+                            backdropFilter: 'blur(5px)',
+                            transition: 'all 0.2s ease',
+                            flexShrink: 0, // Prevent shrinking
+                            '&:hover': {
+                                borderColor: '#667eea',
+                                background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                                color: 'white',
+                                transform: 'translateY(-1px)',
+                                boxShadow: '0 3px 8px rgba(102, 126, 234, 0.3)'
+                            }
+                        }}
                         onClick={() => {
                             setTimeout(() => {
                                 // Get currently most visible thread index
@@ -818,55 +893,276 @@ export const DataThread: FC<{}> = function ({ }) {
                         }}
                     >
                         {label}
-                    </IconButton>
+                    </Button>
                 </Tooltip>
             );
         })}
-    </ButtonGroup>
+    </>
 
-    let jumpButtonDrawerClosed = <ButtonGroup size="small" color="primary" sx={{ gap: 0 }}>
+    let jumpButtonDrawerClosed = <>
         {leafTables.map((_, idx) => (
             <Tooltip key={`thread-nav-${idx}`} title={`Jump to thread ${idx + 1}`}>
-                <IconButton 
+                <Button 
                     size="small" 
-                    color="primary"
-                    sx={{ fontSize: '12px', padding: '4px' }} 
+                    variant="text"
+                    sx={{ 
+                        fontSize: '10px',
+                        fontWeight: 600,
+                        minWidth: '24px',
+                        height: '24px',
+                        borderRadius: '50%',
+                        color: '#667eea',
+                        background: 'rgba(102, 126, 234, 0.1)',
+                        transition: 'all 0.2s ease',
+                        flexShrink: 0, // Prevent shrinking
+                        '&:hover': {
+                            background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                            color: 'white',
+                            transform: 'scale(1.05)',
+                            boxShadow: '0 2px 8px rgba(102, 126, 234, 0.4)'
+                        }
+                    }} 
                     onClick={() => {
                         const threadElement = document.querySelector(`[data-thread-index="${idx}"]`);
                         threadElement?.scrollIntoView({ behavior: 'smooth' });
                     }}
                 > 
                     {idx + 1}
-                </IconButton>
+                </Button>
             </Tooltip>
         ))}
-    </ButtonGroup>
+    </>
 
     let jumpButtons = drawerOpen ? jumpButtonsDrawerOpen : jumpButtonDrawerClosed;
 
 
     let carousel = (
-        <Box className="data-thread" sx={{ overflow: 'hidden', }}>
+        <Box className="data-thread" sx={{ 
+            overflow: 'hidden',
+            background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
+            position: 'relative'
+        }}>
+            {/* Animated background elements */}
             <Box sx={{
-                direction: 'ltr', display: 'flex',
-                paddingTop: "10px", paddingLeft: '12px', alignItems: 'center', justifyContent: 'space-between'
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
+                bottom: 0,
+                opacity: 0.1,
+                pointerEvents: 'none',
+                '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: '10%',
+                    left: '5%',
+                    width: '60px',
+                    height: '60px',
+                    background: 'radial-gradient(circle, rgba(102, 126, 234, 0.4) 0%, transparent 70%)',
+                    borderRadius: '50%',
+                    animation: 'float 8s ease-in-out infinite'
+                },
+                '&::after': {
+                    content: '""',
+                    position: 'absolute',
+                    bottom: '15%',
+                    right: '8%',
+                    width: '40px',
+                    height: '40px',
+                    background: 'radial-gradient(circle, rgba(118, 75, 162, 0.3) 0%, transparent 70%)',
+                    borderRadius: '50%',
+                    animation: 'float 10s ease-in-out infinite reverse'
+                }
+            }} />
+
+            {/* Collapsible Modern Header */}
+            <Box sx={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                borderBottom: '1px solid rgba(102, 126, 234, 0.2)',
+                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
+                position: 'relative',
+                zIndex: 10,
+                transition: 'all 0.3s ease'
             }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Typography className="view-title" component="h2" sx={{ marginTop: "6px" }}>
-                        Data Threads
-                    </Typography>
-                    {jumpButtons}
-                </Box>
-                
-                <Tooltip title={drawerOpen ? "collapse" : "expand"}>
-                    <IconButton size={'small'} color="primary" disabled={leafTables.length <= 1} onClick={() => { setThreadDrawerOpen(!threadDrawerOpen); }}>
-                        {drawerOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
-                    </IconButton>
-                </Tooltip>
+                {headerCollapsed ? (
+                    // Collapsed Header - Only Icon
+                    <Box sx={{
+                        direction: 'ltr', 
+                        display: 'flex',
+                        padding: "8px", 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        minHeight: '44px'
+                    }}>
+                        <Tooltip title="Expand header">
+                            <Box 
+                                onClick={() => setHeaderCollapsed(false)}
+                                sx={{
+                                    background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                                    borderRadius: '8px',
+                                    p: 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease',
+                                    '&:hover': {
+                                        transform: 'scale(1.1)',
+                                        boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
+                                    }
+                                }}
+                            >
+                                <AccountTreeIcon sx={{ fontSize: 16, color: 'white' }} />
+                            </Box>
+                        </Tooltip>
+                    </Box>
+                ) : (
+                    // Expanded Header - Full Content
+                    <Box sx={{
+                        direction: 'ltr', 
+                        display: 'flex',
+                        padding: "12px 16px", 
+                        alignItems: 'center', 
+                        justifyContent: 'space-between',
+                        minHeight: '60px'
+                    }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Box sx={{
+                                background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                                borderRadius: '10px',
+                                p: 1.2,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)'
+                            }}>
+                                <AccountTreeIcon sx={{ fontSize: 20, color: 'white' }} />
+                            </Box>
+                            <Box>
+                                <Typography 
+                                    className="view-title" 
+                                    component="h2" 
+                                    sx={{ 
+                                        fontSize: '18px',
+                                        fontWeight: 700,
+                                        background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                                        backgroundClip: 'text',
+                                        WebkitBackgroundClip: 'text',
+                                        WebkitTextFillColor: 'transparent',
+                                        margin: 0,
+                                        lineHeight: 1.1
+                                    }}
+                                >
+                                    Threads
+                                </Typography>
+                                <Typography 
+                                    variant="caption" 
+                                    sx={{ 
+                                        color: 'text.secondary',
+                                        fontSize: '11px',
+                                        fontWeight: 500
+                                    }}
+                                >
+                                    {leafTables.length} thread{leafTables.length !== 1 ? 's' : ''}
+                                </Typography>
+                            </Box>
+                            {leafTables.length > 1 && (
+                                <Box sx={{ 
+                                    display: 'flex', 
+                                    alignItems: 'center',
+                                    ml: 2,
+                                    maxWidth: '300px',
+                                    overflow: 'hidden'
+                                }}>
+                                    <Box sx={{
+                                        display: 'flex',
+                                        gap: 1,
+                                        overflowX: 'auto',
+                                        scrollBehavior: 'smooth',
+                                        pb: 0.5,
+                                        '&::-webkit-scrollbar': {
+                                            height: '3px',
+                                        },
+                                        '&::-webkit-scrollbar-track': {
+                                            background: 'rgba(0, 0, 0, 0.1)',
+                                            borderRadius: '3px',
+                                        },
+                                        '&::-webkit-scrollbar-thumb': {
+                                            background: 'rgba(102, 126, 234, 0.5)',
+                                            borderRadius: '3px',
+                                            '&:hover': {
+                                                background: 'rgba(102, 126, 234, 0.7)',
+                                            }
+                                        }
+                                    }}>
+                                        {jumpButtons}
+                                    </Box>
+                                </Box>
+                            )}
+                        </Box>
+                        
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                            {/* Collapse Header Button */}
+                            <Tooltip title="Collapse header">
+                                <IconButton 
+                                    size={'small'} 
+                                    onClick={() => setHeaderCollapsed(true)}
+                                    sx={{
+                                        background: 'rgba(102, 126, 234, 0.1)',
+                                        color: '#667eea',
+                                        borderRadius: 2,
+                                        transition: 'all 0.3s ease',
+                                        '&:hover': {
+                                            background: 'rgba(102, 126, 234, 0.2)',
+                                            transform: 'scale(1.05)'
+                                        }
+                                    }}
+                                >
+                                    <Box sx={{ fontSize: 16 }}>−</Box>
+                                </IconButton>
+                            </Tooltip>
+                            
+                            {/* Drawer Toggle Button */}
+                            {leafTables.length > 1 && (
+                                <Tooltip title={drawerOpen ? "Collapse view" : "Expand view"}>
+                                    <IconButton 
+                                        size={'medium'} 
+                                        onClick={() => { setThreadDrawerOpen(!threadDrawerOpen); }}
+                                        sx={{
+                                            background: drawerOpen 
+                                                ? 'linear-gradient(45deg, #667eea, #764ba2)' 
+                                                : 'rgba(102, 126, 234, 0.1)',
+                                            color: drawerOpen ? 'white' : '#667eea',
+                                            borderRadius: 2,
+                                            transition: 'all 0.3s ease',
+                                            '&:hover': {
+                                                background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                                                color: 'white',
+                                                transform: 'scale(1.05)',
+                                                boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
+                                            }
+                                        }}
+                                    >
+                                        {drawerOpen ? <UnfoldLessIcon /> : <UnfoldMoreIcon />}
+                                    </IconButton>
+                                </Tooltip>
+                            )}
+                        </Box>
+                    </Box>
+                )}
             </Box>
+
+            {/* Content Area */}
             <Box sx={{
-                transition: 'width 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms', overflowY: 'auto',
-                direction: 'rtl', display: 'block', flex: 1
+                transition: 'width 200ms cubic-bezier(0.4, 0, 0.2, 1) 0ms', 
+                overflowY: 'auto',
+                direction: 'rtl', 
+                display: 'block', 
+                flex: 1,
+                background: 'rgba(255, 255, 255, 0.3)',
+                position: 'relative'
             }}
                  className="thread-view-mode">
                 {view}
@@ -875,6 +1171,222 @@ export const DataThread: FC<{}> = function ({ }) {
     );
 
     return <Box sx={{ display: 'flex', flexDirection: 'row' }}>
+        {/* Dynamic Sidebar */}
+        {leafTables.length > 0 && (
+            <Box sx={{
+                width: drawerOpen ? 76 : 56,
+                minWidth: drawerOpen ? 76 : 56,
+                background: 'linear-gradient(180deg, #667eea 0%, #764ba2 100%)',
+                position: 'relative',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                py: 1.5,
+                transition: 'all 0.3s ease',
+                boxShadow: '2px 0 12px rgba(102, 126, 234, 0.3)',
+                '&::before': {
+                    content: '""',
+                    position: 'absolute',
+                    top: 0,
+                    right: 0,
+                    width: '1px',
+                    height: '100%',
+                    background: 'linear-gradient(180deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%)'
+                }
+            }}>
+                {/* Stats Section */}
+                <Box sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    mb: 2
+                }}>
+                    <Tooltip title="Total Data Threads" placement="right">
+                        <Box sx={{
+                            background: 'rgba(255, 255, 255, 0.2)',
+                            borderRadius: '6px',
+                            p: drawerOpen ? 0.8 : 0.6,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            backdropFilter: 'blur(10px)',
+                            border: '1px solid rgba(255, 255, 255, 0.3)',
+                            minWidth: drawerOpen ? 52 : 40,
+                            width: drawerOpen ? 52 : 40,
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                                background: 'rgba(255, 255, 255, 0.3)',
+                                transform: 'scale(1.05)'
+                            }
+                        }}>
+                            <AccountTreeIcon sx={{ 
+                                fontSize: drawerOpen ? 20 : 16, 
+                                color: 'white', 
+                                mb: 0.3 
+                            }} />
+                            <Typography sx={{ 
+                                fontSize: drawerOpen ? '12px' : '10px', 
+                                fontWeight: 700, 
+                                color: 'white' 
+                            }}>
+                                {leafTables.length}
+                            </Typography>
+                        </Box>
+                    </Tooltip>
+
+                    <Tooltip title="Total Charts" placement="right">
+                        <Box sx={{
+                            background: 'rgba(255, 255, 255, 0.2)',
+                            borderRadius: '6px',
+                            p: drawerOpen ? 0.8 : 0.6,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            backdropFilter: 'blur(10px)',
+                            border: '1px solid rgba(255, 255, 255, 0.3)',
+                            minWidth: drawerOpen ? 52 : 40,
+                            width: drawerOpen ? 52 : 40,
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                                background: 'rgba(255, 255, 255, 0.3)',
+                                transform: 'scale(1.05)'
+                            }
+                        }}>
+                            <InsightsIcon sx={{ 
+                                fontSize: drawerOpen ? 20 : 16, 
+                                color: 'white', 
+                                mb: 0.3 
+                            }} />
+                            <Typography sx={{ 
+                                fontSize: drawerOpen ? '12px' : '10px', 
+                                fontWeight: 700, 
+                                color: 'white' 
+                            }}>
+                                {chartElements.length}
+                            </Typography>
+                        </Box>
+                    </Tooltip>
+
+                    <Tooltip title="Total Tables" placement="right">
+                        <Box sx={{
+                            background: 'rgba(255, 255, 255, 0.2)',
+                            borderRadius: '6px',
+                            p: drawerOpen ? 0.8 : 0.6,
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            backdropFilter: 'blur(10px)',
+                            border: '1px solid rgba(255, 255, 255, 0.3)',
+                            minWidth: drawerOpen ? 52 : 40,
+                            width: drawerOpen ? 52 : 40,
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                                background: 'rgba(255, 255, 255, 0.3)',
+                                transform: 'scale(1.05)'
+                            }
+                        }}>
+                            <TableRowsIcon sx={{ 
+                                fontSize: drawerOpen ? 20 : 16, 
+                                color: 'white', 
+                                mb: 0.3 
+                            }} />
+                            <Typography sx={{ 
+                                fontSize: drawerOpen ? '12px' : '10px', 
+                                fontWeight: 700, 
+                                color: 'white' 
+                            }}>
+                                {tables.length}
+                            </Typography>
+                        </Box>
+                    </Tooltip>
+                </Box>
+
+                {/* Quick Actions */}
+                <Box sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 1.5,
+                    mt: 'auto',
+                    mb: 1
+                }}>
+                    <Tooltip title="Go to Top" placement="right">
+                        <IconButton
+                            size="medium"
+                            onClick={() => {
+                                const threadElement = document.querySelector('[data-thread-index="0"]');
+                                threadElement?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            sx={{
+                                background: 'rgba(255, 255, 255, 0.25)',
+                                color: 'white',
+                                backdropFilter: 'blur(15px)',
+                                border: '2px solid rgba(255, 255, 255, 0.4)',
+                                borderRadius: 2,
+                                minWidth: drawerOpen ? 48 : 40,
+                                height: drawerOpen ? 48 : 40,
+                                fontSize: drawerOpen ? 20 : 18,
+                                fontWeight: 'bold',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                    background: 'rgba(255, 255, 255, 0.4)',
+                                    transform: 'scale(1.15) translateY(-2px)',
+                                    border: '2px solid rgba(255, 255, 255, 0.6)',
+                                    boxShadow: '0 6px 20px rgba(0,0,0,0.3)'
+                                }
+                            }}
+                        >
+                            ⬆
+                        </IconButton>
+                    </Tooltip>
+
+                    <Tooltip title="Go to Bottom" placement="right">
+                        <IconButton
+                            size="medium"
+                            onClick={() => {
+                                const lastThread = document.querySelector(`[data-thread-index="${leafTables.length - 1}"]`);
+                                lastThread?.scrollIntoView({ behavior: 'smooth' });
+                            }}
+                            sx={{
+                                background: 'rgba(255, 255, 255, 0.25)',
+                                color: 'white',
+                                backdropFilter: 'blur(15px)',
+                                border: '2px solid rgba(255, 255, 255, 0.4)',
+                                borderRadius: 2,
+                                minWidth: drawerOpen ? 48 : 40,
+                                height: drawerOpen ? 48 : 40,
+                                fontSize: drawerOpen ? 20 : 18,
+                                fontWeight: 'bold',
+                                boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                    background: 'rgba(255, 255, 255, 0.4)',
+                                    transform: 'scale(1.15) translateY(2px)',
+                                    border: '2px solid rgba(255, 255, 255, 0.6)',
+                                    boxShadow: '0 6px 20px rgba(0,0,0,0.3)'
+                                }
+                            }}
+                        >
+                            ⬇
+                        </IconButton>
+                    </Tooltip>
+                </Box>
+
+                {/* Animated indicator */}
+                <Box sx={{
+                    position: 'absolute',
+                    bottom: 20,
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    width: 4,
+                    height: 20,
+                    background: 'rgba(255, 255, 255, 0.6)',
+                    borderRadius: 2,
+                    animation: 'pulse 2s ease-in-out infinite'
+                }} />
+            </Box>
+        )}
         {carousel}
     </Box>;
 }

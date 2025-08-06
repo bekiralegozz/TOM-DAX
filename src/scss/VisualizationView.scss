@@ -163,67 +163,128 @@ $accelerate-ease: cubic-bezier(0.4, 0.0, 1, 1);
     display: flex;
     flex-grow: 1;
     height: calc(100%);
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
 
     .vega-focused {
         flex: 1;
         height: 100%;
         display: flex;
         overflow: auto;
+        background: rgba(255, 255, 255, 0.5);
+        backdrop-filter: blur(10px);
+        border-radius: 12px;
+        margin: 8px;
         
         .chart-box {
             display: flex;
-            color: #fff;
-            padding: 5px;
-            border-radius: 3px;
+            color: #333;
+            padding: 12px;
+            border-radius: 12px;
             margin: auto;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
       
         .chart-box-animation {
             transform-origin: bottom left;
-            animation: appear 0.5s ease-out
+            animation: appear 0.5s ease-out;
         }
     }
 
     .vega-container {
-        width: 200px;
-        min-width: 200px;
+        width: 220px;
+        min-width: 220px;
         display: flex;
         flex-wrap: wrap;
-        overflow-y: scroll;
-        border-right: 1px lightgray solid;
+        overflow-y: auto;
+        border-right: 1px solid rgba(102, 126, 234, 0.2);
         align-content: flex-start;
-        padding-top: 0px;
+        padding: 12px 8px;
         direction: rtl;
-        padding-bottom: 6px;
+        background: rgba(255, 255, 255, 0.3);
+        
+        // Custom scrollbar
+        &::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.3);
+            border-radius: 3px;
+            
+            &:hover {
+                background: rgba(102, 126, 234, 0.5);
+            }
+        }
     }
-
-    
-
 }
 
 .vis-split-pane {
     position: relative !important;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    
+    .Resizer {
+        background: rgba(102, 126, 234, 0.3) !important;
+        opacity: 0.5;
+        transition: all 0.2s ease;
+        
+        &:hover {
+            opacity: 1;
+            background: rgba(102, 126, 234, 0.6) !important;
+        }
+    }
 }
 
 .data-thread {
-    min-width: 201px;
+    min-width: 240px;
     display: flex;
     flex-direction: column;
-    overflow-y: scroll;
-    border-right: 1px lightgray solid;
+    overflow: hidden;
+    position: relative;
     align-content: flex-start;
     height: calc(100vh - 50px);
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 
     .thread-view-animation {
         transform-origin: bottom left;
-        animation: appear 0.5s ease-out
+        animation: appear 0.5s ease-out;
     }
 
+    .thread-view-mode {
+        &::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        &::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 3px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: rgba(102, 126, 234, 0.3);
+            border-radius: 3px;
+            transition: background 0.2s ease;
+            
+            &:hover {
+                background: rgba(102, 126, 234, 0.5);
+            }
+        }
+    }
 
     .vega-thumbnail {
-
         display: flex;
         cursor: pointer !important;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(102, 126, 234, 0.2);
 
         .vega-embed {
             display: flex;
@@ -231,24 +292,38 @@ $accelerate-ease: cubic-bezier(0.4, 0.0, 1, 1);
         }
 
         canvas {
-            margin: 4px auto;
+            margin: 8px auto;
+        }
+
+        &:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+            border-color: rgba(102, 126, 234, 0.4);
         }
     }
 
     .vega-thumbnail-box {
-
-        border-radius: 3px;
+        border-radius: 12px;
         cursor: pointer !important;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        position: relative;
 
         & .data-thread-chart-card-action-button {
             visibility: hidden;
             opacity: 0;
-            transition: visibility 0s, opacity 0.3s linear;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 8px;
+            margin: 4px;
         }
         
-        &:hover .data-thread-chart-card-action-button {
-            visibility: visible;
-            opacity: 1;
+        &:hover {
+            .data-thread-chart-card-action-button {
+                visibility: visible;
+                opacity: 1;
+            }
         }
     }
 
@@ -256,70 +331,96 @@ $accelerate-ease: cubic-bezier(0.4, 0.0, 1, 1);
         transform-origin: bottom left;
         animation: appear 0.5s ease-out;
     }
-    
 }
-
 
 .data-thread-card {
     cursor: pointer;
-}
+    border-radius: 12px !important;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(102, 126, 234, 0.2) !important;
+    background: rgba(255, 255, 255, 0.8) !important;
+    backdrop-filter: blur(10px);
+    overflow: hidden;
+    position: relative;
 
-.data-thread-card:hover {
-    transform: translateY(1px);
-    box-shadow: 0 0 3px rgba(33,33,33,.2);
-    z-index: 1;
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15) !important;
+        border-color: rgba(102, 126, 234, 0.4) !important;
+    }
+
+    &.selected-card {
+        border: 2px solid #667eea !important;
+        box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3) !important;
+        
+        &::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+    }
 }
 
 .hover-card {
     cursor: pointer;
+    transition: all 0.3s ease;
+    border-radius: 12px;
+    
     canvas {
         cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.15);
     }
 }
 
-.hover-card:hover {
-    transform: translateY(1px);
-    box-shadow: 0 0 3px rgba(33,33,33,.2);
+@keyframes appear {
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
-.visualization-carousel {
-    display: flex;
-    flex-grow: 1;
-    height: calc(100%);
-
-    .vega-focused {
-        flex: 1;
-        height: 100%;
-        display: flex;
-        overflow: auto;
-        
-        .chart-box {
-            display: flex;
-            color: #fff;
-            padding: 5px;
-            border-radius: 3px;
-            margin: auto;
-        }
-      
-        .chart-box-animation {
-            transform-origin: bottom left;
-            animation: appear 0.5s ease-out
-        }
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
     }
+    50% {
+        opacity: 0.7;
+        transform: scale(1.05);
+    }
+}
 
-    .vega-container {
-        width: 200px;
+@media (max-width: 768px) {
+    .data-thread {
         min-width: 200px;
-        display: flex;
-        flex-wrap: wrap;
-        overflow-y: scroll;
-        border-right: 1px lightgray solid;
-        align-content: flex-start;
-        padding-top: 0px;
-        direction: rtl;
-        padding-bottom: 6px;
+        
+        .vega-container {
+            width: 180px;
+            min-width: 180px;
+        }
     }
+}
 
-    
-
+@media (max-width: 480px) {
+    .data-thread {
+        min-width: 160px;
+        
+        .vega-container {
+            width: 140px;
+            min-width: 140px;
+        }
+    }
 }

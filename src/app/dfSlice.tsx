@@ -52,18 +52,26 @@ export interface DataFormulatorState {
     displayPanelSize: number;
     visPaneSize: number;
     conceptShelfPaneSize: number;
+    dataFieldsCollapsed: boolean;
 
     // controls logs and message index
     messages: Message[];
     displayedMessageIdx: number;
 
-    visViewMode: "gallery" | "carousel";
+    visViewMode: "gallery" | "carousel" | "chat";
 
     focusedTableId: string | undefined;
     focusedChartId: string | undefined;
     activeThreadChartId: string | undefined; // specifying which chartThread is actively viewed
 
     chartSynthesisInProgress: string[];
+
+    // file upload progress tracking
+    fileUploading: {
+        fileName: string;
+        progress: number; // 0-100
+        status: 'parsing' | 'loading' | 'complete' | 'error';
+    }[];
 
     config: {
         formulateTimeoutSeconds: number;
@@ -93,6 +101,7 @@ const initialState: DataFormulatorState = {
     displayPanelSize: 550,
     visPaneSize: 640,
     conceptShelfPaneSize: 240, // 300 is a good number for derived concept cards
+    dataFieldsCollapsed: false,
 
     messages: [],
     displayedMessageIdx: -1,
@@ -112,7 +121,9 @@ const initialState: DataFormulatorState = {
         defaultChartHeight: 300,
     },
 
-    dataLoaderConnectParams: {}
+    dataLoaderConnectParams: {},
+
+    fileUploading: []
 }
 
 let getUnrefedDerivedTableIds = (state: DataFormulatorState) => {
@@ -691,6 +702,9 @@ export const dataFormulatorSlice = createSlice({
         setConceptShelfPaneSize: (state, action: PayloadAction<number>) => {
             state.conceptShelfPaneSize = action.payload;
         },
+        setDataFieldsCollapsed: (state, action: PayloadAction<boolean>) => {
+            state.dataFieldsCollapsed = action.payload;
+        },
         addMessages: (state, action: PayloadAction<Message>) => {
             state.messages = [...state.messages, action.payload];
         },
@@ -725,7 +739,7 @@ export const dataFormulatorSlice = createSlice({
                 }           
             }
         },
-        setVisViewMode: (state, action: PayloadAction<"carousel" | "gallery">) => {
+        setVisViewMode: (state, action: PayloadAction<"carousel" | "gallery" | "chat">) => {
             state.visViewMode = action.payload;
         },
         changeChartRunningStatus: (state, action: PayloadAction<{chartId: string, status: boolean}>) => {
@@ -755,6 +769,23 @@ export const dataFormulatorSlice = createSlice({
         deleteDataLoaderConnectParams: (state, action: PayloadAction<string>) => {
             let dataLoaderType = action.payload;
             delete state.dataLoaderConnectParams[dataLoaderType];
+        },
+        setFileUploadProgress: (state, action: PayloadAction<{fileName: string, progress: number, status: 'parsing' | 'loading' | 'complete' | 'error'}>) => {
+            const { fileName, progress, status } = action.payload;
+            const existingIndex = state.fileUploading.findIndex(f => f.fileName === fileName);
+            
+            if (existingIndex >= 0) {
+                state.fileUploading[existingIndex] = { fileName, progress, status };
+            } else {
+                state.fileUploading.push({ fileName, progress, status });
+            }
+        },
+        removeFileUploadProgress: (state, action: PayloadAction<string>) => {
+            const fileName = action.payload;
+            state.fileUploading = state.fileUploading.filter(f => f.fileName !== fileName);
+        },
+        clearAllFileUploadProgress: (state) => {
+            state.fileUploading = [];
         }
     },
     extraReducers: (builder) => {

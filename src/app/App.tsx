@@ -73,20 +73,39 @@ import UploadFileIcon from '@mui/icons-material/UploadFile';
 import DownloadIcon from '@mui/icons-material/Download';
 import { DBTableManager, DBTableSelectionDialog, handleDBDownload } from '../views/DBTableManager';
 import CloudQueueIcon from '@mui/icons-material/CloudQueue';
+import { DatabaseIndexer } from '../components/DatabaseIndexer';
+import { NLPChat } from '../components/NLPChat';
+import StorageIcon from '@mui/icons-material/Storage';
+import ChatIcon from '@mui/icons-material/Chat';
 
 // Authentication imports
 import { useAuth } from '../hooks/useAuth';
 import { Login } from '../components/Login';
 
 const AppBar = styled(MuiAppBar)(({ theme }) => ({
-    color: 'black',
-    backgroundColor: "white",
-    borderBottom: "1px solid #C3C3C3",
-    boxShadow: "none",
-    transition: theme.transitions.create(['margin', 'width'], {
+    background: 'linear-gradient(135deg, rgba(255,255,255,0.95) 0%, rgba(249,250,255,0.95) 100%)',
+    backdropFilter: 'blur(20px)',
+    borderBottom: '1px solid rgba(102, 126, 234, 0.15)',
+    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.08)',
+    color: '#2c3e50',
+    position: 'relative',
+    '&::before': {
+        content: '""',
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: 'linear-gradient(90deg, rgba(102, 126, 234, 0.03) 0%, rgba(118, 75, 162, 0.03) 100%)',
+        pointerEvents: 'none',
+    },
+    transition: theme.transitions.create(['margin', 'width', 'box-shadow'], {
         easing: theme.transitions.easing.sharp,
         duration: theme.transitions.duration.leavingScreen,
     }),
+    '&:hover': {
+        boxShadow: '0 12px 40px rgba(0, 0, 0, 0.12)',
+    }
 }));
 
 declare module '@mui/material/styles' {
@@ -296,9 +315,9 @@ const ResetDialog: React.FC = () => {
 
     return (
         <>
-            <Button
-                variant="text"
-                onClick={() => setOpen(true)}
+            <Button 
+                variant="text" 
+                onClick={() => setOpen(true)} 
                 sx={{ textTransform: 'none' }}
                 color="error"
                 startIcon={<ClearIcon />}
@@ -331,15 +350,39 @@ const LogoutButton: React.FC = () => {
     };
 
     return (
-        <Tooltip title={`Logged in as ${user?.username || 'User'}`}>
+        <Tooltip title={`Logged in as ${user?.username || 'User'} - Click to logout`}>
             <Button
                 variant="text"
                 onClick={handleLogout}
-                sx={{ textTransform: 'none' }}
+                sx={{ 
+                    textTransform: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    padding: '6px 12px',
+                    borderRadius: '12px',
+                    transition: 'all 0.3s ease',
+                    '&:hover': {
+                        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                        color: '#ef4444',
+                        transform: 'translateY(-1px)',
+                        boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
+                    }
+                }}
                 color="inherit"
-                startIcon={<PowerSettingsNewIcon />}
             >
-                Logout
+                <Avatar 
+                    {...stringAvatar(user?.username || 'User')}
+                    sx={{
+                        width: 24,
+                        height: 24,
+                        fontSize: '0.75rem',
+                        background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+                        border: '2px solid rgba(255, 255, 255, 0.8)'
+                    }}
+                />
+                <PowerSettingsNewIcon sx={{ fontSize: 16 }} />
             </Button>
         </Tooltip>
     );
@@ -548,9 +591,9 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
     useEffect(() => {
         // Only proceed with initialization if authenticated
         if (isAuthenticated) {
-            document.title = toolName;
-            dispatch(fetchAvailableModels());
-            dispatch(getSessionId());
+        document.title = toolName;
+        dispatch(fetchAvailableModels());
+        dispatch(getSessionId());
         }
     }, [isAuthenticated]);
 
@@ -602,8 +645,76 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
         },
     });
 
-    let switchers = (
-        <Box sx={{ display: "flex" }} key="switchers">
+    let appBar = [
+        <AppBar className="app-bar" position="static" key="app-bar-main">
+            <Toolbar variant="dense" sx={{ 
+                minHeight: '48px', 
+                padding: '0 16px',
+                position: 'relative',
+                zIndex: 1
+            }}>
+                {/* Logo and Brand Section */}
+                <Button href={"/"} sx={{
+                    display: "flex", 
+                    flexDirection: "row", 
+                    textTransform: "none",
+                    backgroundColor: 'transparent',
+                    borderRadius: '8px',
+                    padding: '4px 12px',
+                    marginRight: '12px',
+                    transition: 'all 0.3s ease',
+                    "&:hover": {
+                        backgroundColor: "rgba(102, 126, 234, 0.08)",
+                        transform: 'translateY(-1px)',
+                        boxShadow: '0 4px 12px rgba(102, 126, 234, 0.15)'
+                    }
+                }} color="inherit">
+                    <Box 
+                        component="img" 
+                        sx={{ 
+                            height: 28, 
+                            marginRight: "12px",
+                            filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))',
+                            transition: 'all 0.3s ease',
+                            '&:hover': {
+                                filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.15))',
+                                transform: 'scale(1.05)'
+                            }
+                        }} 
+                        alt="" 
+                        src={dfLogo} 
+                    />
+                    <Typography 
+                        variant="h6" 
+                        noWrap 
+                        component="h1" 
+                        className="gradient-text"
+                        sx={{ 
+                            fontWeight: 600, 
+                            display: { xs: 'none', sm: 'block' },
+                            fontSize: '1.1rem',
+                            letterSpacing: '0.3px'
+                        }}
+                    >
+                        {toolName} {process.env.NODE_ENV == "development" ? "DEV" : ""}
+                    </Typography>
+                </Button>
+
+                {/* Center Section - View Switchers */}
+                <Box sx={{ 
+                    flexGrow: 1, 
+                    display: 'flex', 
+                    justifyContent: 'center',
+                    alignItems: 'center'
+                }}>
+                    <Box sx={{ 
+                        background: 'rgba(255, 255, 255, 0.7)',
+                        backdropFilter: 'blur(10px)',
+                        borderRadius: '12px',
+                        padding: '4px',
+                        border: '1px solid rgba(102, 126, 234, 0.2)',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)'
+                    }}>
             <ToggleButtonGroup
                 color="primary"
                 value={visViewMode}
@@ -613,66 +724,218 @@ export const AppFC: FC<AppFCProps> = function AppFC(appProps) {
                     event: React.MouseEvent<HTMLElement>,
                     newViewMode: string | null,
                 ) => {
-                    if (newViewMode === "gallery" || newViewMode === "carousel") {
+                                if (newViewMode === "gallery" || newViewMode === "carousel" || newViewMode === "chat") {
                         dispatch(dfActions.setVisViewMode(newViewMode));
                     }
                 }}
                 aria-label="View Mode"
-                sx={{ marginRight: "8px", height: 32, padding: "4px 0px", marginTop: "2px", "& .MuiToggleButton-root": { padding: "0px 6px" } }}
+                            sx={{ 
+                                "& .MuiToggleButton-root": { 
+                                    padding: "6px 10px",
+                                    border: 'none',
+                                    borderRadius: '6px',
+                                    margin: '2px',
+                                    color: '#667eea',
+                                    transition: 'all 0.2s ease',
+                                    '&:hover': {
+                                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                                        transform: 'scale(1.05)'
+                                    },
+                                    '&.Mui-selected': {
+                                        backgroundColor: '#667eea',
+                                        color: 'white',
+                                        boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+                                        '&:hover': {
+                                            backgroundColor: '#5a6fd8'
+                                        }
+                                    }
+                                }
+                            }}
             >
                 <ToggleButton value="carousel" aria-label="view list">
-                    <Tooltip title="view list">
+                                <Tooltip title="List View">
                         <ViewSidebarIcon fontSize="small" sx={{ transform: "scaleX(-1)" }} />
                     </Tooltip>
                 </ToggleButton>
                 <ToggleButton value="gallery" aria-label="view grid">
-                    <Tooltip title="view grid">
+                                <Tooltip title="Grid View">
                         <GridViewIcon fontSize="small" />
                     </Tooltip>
                 </ToggleButton>
+                            <ToggleButton value="chat" aria-label="chat view">
+                                <Tooltip title="Chat View">
+                                    <ChatIcon fontSize="small" />
+                                </Tooltip>
+                            </ToggleButton>
             </ToggleButtonGroup>
         </Box>
-    )
-
-    let appBar = [
-        <AppBar className="app-bar" position="static" key="app-bar-main">
-            <Toolbar variant="dense">
-                <Button href={"/"} sx={{
-                    display: "flex", flexDirection: "row", textTransform: "none",
-                    backgroundColor: 'transparent',
-                    "&:hover": {
-                        backgroundColor: "transparent"
-                    }
-                }} color="inherit">
-                    <Box component="img" sx={{ height: 32, marginRight: "12px" }} alt="" src={dfLogo} />
-                    <Typography variant="h6" noWrap component="h1" sx={{ fontWeight: 300, display: { xs: 'none', sm: 'block' } }}>
-                        {toolName} {process.env.NODE_ENV == "development" ? "" : ""}
-                    </Typography>
-                </Button>
-                <Box sx={{ flexGrow: 1, textAlign: 'center', display: 'flex', justifyContent: 'center' }} >
-                    {switchers}
                 </Box>
-                <Box sx={{ display: 'flex', fontSize: 14 }}>
+
+                {/* Right Section - Action Buttons */}
+                <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center',
+                    gap: 0.5,
+                    '& .MuiDivider-root': {
+                        borderColor: 'rgba(102, 126, 234, 0.2)',
+                        height: '20px',
+                        margin: '0 4px'
+                    }
+                }}>
                     <ConfigDialog />
                     <Divider orientation="vertical" variant="middle" flexItem />
                     <DBTableSelectionDialog buttonElement={
-                        <Typography sx={{ display: 'flex', fontSize: 14, alignItems: 'center', gap: 1, textTransform: 'none' }}>
+                        <Typography sx={{ 
+                            display: 'flex', 
+                            fontSize: 13, 
+                            alignItems: 'center', 
+                            gap: 1, 
+                            textTransform: 'none',
+                            color: '#2c3e50',
+                            fontWeight: 500,
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                                backgroundColor: 'rgba(102, 126, 234, 0.08)',
+                                color: '#667eea'
+                            }
+                        }}>
                             <CloudQueueIcon fontSize="small" /> Database
                         </Typography>
                     } />
                     <Divider orientation="vertical" variant="middle" flexItem />
-                    <ModelSelectionButton />
+                    <DatabaseIndexer buttonElement={
+                        <Typography sx={{ 
+                            display: 'flex', 
+                            fontSize: 13, 
+                            alignItems: 'center', 
+                            gap: 1, 
+                            textTransform: 'none',
+                            color: '#2c3e50',
+                            fontWeight: 500,
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                                backgroundColor: 'rgba(102, 126, 234, 0.08)',
+                                color: '#667eea'
+                            }
+                        }}>
+                            <StorageIcon fontSize="small" /> Indexer
+                        </Typography>
+                    } />
                     <Divider orientation="vertical" variant="middle" flexItem />
-                    <Typography sx={{ display: 'flex', fontSize: 14, alignItems: 'center', gap: 1 }}>
+                    <NLPChat buttonElement={
+                        <Typography sx={{ 
+                            display: 'flex', 
+                            fontSize: 13, 
+                            alignItems: 'center', 
+                            gap: 1, 
+                            textTransform: 'none',
+                            color: '#2c3e50',
+                            fontWeight: 500,
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                                backgroundColor: 'rgba(102, 126, 234, 0.08)',
+                                color: '#667eea'
+                            }
+                        }}>
+                            <ChatIcon fontSize="small" /> Chat
+                        </Typography>
+                    } />
+                    <Divider orientation="vertical" variant="middle" flexItem />
+                    <Box sx={{
+                        '& button': {
+                            color: '#2c3e50',
+                            fontWeight: 500,
+                            textTransform: 'none',
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                                backgroundColor: 'rgba(102, 126, 234, 0.08)',
+                                color: '#667eea'
+                            }
+                        }
+                    }}>
+                    <ModelSelectionButton />
+                    </Box>
+                    <Divider orientation="vertical" variant="middle" flexItem />
+                    <Typography sx={{ 
+                        display: 'flex', 
+                        fontSize: 13, 
+                        alignItems: 'center', 
+                        gap: 1,
+                        '& button': {
+                            color: '#2c3e50',
+                            fontWeight: 500,
+                            textTransform: 'none',
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                                backgroundColor: 'rgba(102, 126, 234, 0.08)',
+                                color: '#667eea'
+                            }
+                        }
+                    }}>
                         <TableMenu />
                     </Typography>
                     <Divider orientation="vertical" variant="middle" flexItem />
-                    <Typography sx={{ display: 'flex', fontSize: 14, alignItems: 'center', gap: 1 }}>
+                    <Typography sx={{ 
+                        display: 'flex', 
+                        fontSize: 13, 
+                        alignItems: 'center', 
+                        gap: 1,
+                        '& button': {
+                            color: '#2c3e50',
+                            fontWeight: 500,
+                            textTransform: 'none',
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                                backgroundColor: 'rgba(102, 126, 234, 0.08)',
+                                color: '#667eea'
+                            }
+                        }
+                    }}>
                         <SessionMenu />
                     </Typography>
                     <Divider orientation="vertical" variant="middle" flexItem />
+                    <Box sx={{
+                        '& button': {
+                            color: '#2c3e50',
+                            fontWeight: 500,
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                                backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                                color: '#ef4444'
+                            }
+                        }
+                    }}>
                     <ResetDialog />
-                    <LogoutButton />
+                    </Box>
+                    <Box sx={{
+                        '& button': {
+                            color: '#2c3e50',
+                            fontWeight: 500,
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            transition: 'all 0.2s ease',
+                            '&:hover': {
+                                backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                                color: '#ef4444'
+                            }
+                        }
+                    }}>
+                        <LogoutButton />
+                    </Box>
                     <Popup popupConfig={popupConfig} appConfig={appConfig} table={tables[0]} />
                 </Box>
             </Toolbar>

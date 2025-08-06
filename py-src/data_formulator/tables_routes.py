@@ -17,9 +17,14 @@ from pathlib import Path
 
 from data_formulator.db_manager import db_manager
 from data_formulator.data_loader import DATA_LOADERS
+from data_formulator.data_loader.external_data_loader import sanitize_table_name
 
 import re
 from typing import Tuple
+
+def get_data_loader_class(data_loader_type: str):
+    """Get the appropriate data loader class based on type"""
+    return DATA_LOADERS.get(data_loader_type)
 
 # Configure root logger for general application logging
 logging.basicConfig(
@@ -284,6 +289,88 @@ def get_table_data():
             "status": "error",
             "message": safe_msg
         }), status_code
+
+@tables_bp.route('/load-database-table', methods=['POST'])
+def load_database_table():
+    """Execute custom SQL on external database and import results as table"""
+    try:
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({"status": "error", "message": "No data provided"}), 400
+        
+        data_loader_type = data.get('data_loader_type')
+        connection_params = data.get('connection_params', {})
+        table_name = data.get('table_name', 'query_result')
+        custom_sql = data.get('custom_sql')
+        
+        if not custom_sql:
+            return jsonify({"status": "error", "message": "custom_sql is required"}), 400
+        
+        if not data_loader_type:
+            return jsonify({"status": "error", "message": "data_loader_type is required"}), 400
+        
+        # Sanitize table name
+        table_name = sanitize_table_name(table_name)
+        
+        # Get database connection
+        with db_manager.connection(session['session_id']) as duck_db_conn:
+            try:
+                # Initialize data loader with correct parameters
+                data_loader_class = get_data_loader_class(data_loader_type)
+                data_loader = data_loader_class(connection_params, duck_db_conn)
+                
+                # Now execute custom SQL directly without schema manipulation
+                logger.info(f"Executing custom SQL: {custom_sql}")
+                results = data_loader.view_query_sample(custom_sql)
+                
+                if not results:
+                    return jsonify({"status": "error", "message": "Query returned no results"}), 400
+                
+                # Import results as a table in DuckDB
+                df = pd.DataFrame(results)
+                
+                # Generate unique table name if needed
+                base_name = table_name
+                counter = 1
+                while True:
+                    exists = duck_db_conn.execute(f"SELECT COUNT(*) FROM duckdb_tables() WHERE table_name = '{table_name}'").fetchone()[0] > 0
+                    if not exists:
+                        break
+                    table_name = f"{base_name}_{counter}"
+                    counter += 1
+                
+                # Create table in DuckDB
+                duck_db_conn.register('df_temp', df)
+                duck_db_conn.execute(f"CREATE TABLE {table_name} AS SELECT * FROM df_temp")
+                duck_db_conn.execute("DROP VIEW df_temp")
+                
+                logger.info(f"Successfully created table {table_name} with {len(df)} rows")
+                
+                return jsonify({
+                    "status": "success",
+                    "table_name": table_name,
+                    "row_count": len(df),
+                    "columns": list(df.columns),
+                    "rows": df.to_dict(orient="records"),
+                    "message": f"Query executed successfully, imported as '{table_name}'"
+                })
+                
+            except Exception as e:
+                logger.error(f"Error executing custom SQL: {str(e)}")
+                safe_msg, status_code = sanitize_db_error_message(e)
+                return jsonify({
+                    "status": "error",
+                    "message": f"SQL execution failed: {safe_msg}"
+                }), status_code
+                
+    except Exception as e:
+        logger.error(f"Error in load_database_table: {str(e)}")
+        return jsonify({
+            "status": "error",
+            "message": f"Unexpected error: {str(e)}"
+        }), 500
+
 
 @tables_bp.route('/create-table', methods=['POST'])
 def create_table():

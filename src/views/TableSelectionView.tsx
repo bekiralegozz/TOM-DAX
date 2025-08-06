@@ -268,7 +268,200 @@ export const TableUploadDialog: React.FC<TableUploadDialogProps> = ({ buttonElem
     const dispatch = useDispatch<AppDispatch>();
     const inputRef = React.useRef<HTMLInputElement>(null);
     const existingTables = useSelector((state: DataFormulatorState) => state.tables);
+    const fileUploading = useSelector((state: DataFormulatorState) => state.fileUploading);
     const existingNames = new Set(existingTables.map(t => t.id));
+
+    const handleFileUploadWithProgress = async (file: File, uniqueName: string) => {
+        const fileName = file.name;
+        
+        try {
+            // Start upload progress
+            dispatch(dfActions.setFileUploadProgress({
+                fileName,
+                progress: 0,
+                status: 'parsing'
+            }));
+
+            // Show initial message for large files
+            if (file.size > 10 * 1024 * 1024) { // 10MB
+                dispatch(dfActions.addMessages({
+                    "timestamp": Date.now(),
+                    "type": "info",
+                    "value": `Processing large file ${fileName} (${(file.size / (1024 * 1024)).toFixed(2)}MB). This may take a moment...`
+                }));
+            }
+
+            // Simulate progress during file reading
+            const updateProgress = (progress: number) => {
+                dispatch(dfActions.setFileUploadProgress({
+                    fileName,
+                    progress,
+                    status: 'parsing'
+                }));
+            };
+
+            // Handle text files (CSV, TSV, JSON)
+            if (file.type === 'text/csv' || 
+                file.type === 'text/tab-separated-values' || 
+                file.type === 'application/json' ||
+                file.name.endsWith('.csv') || 
+                file.name.endsWith('.tsv') || 
+                file.name.endsWith('.json')) {
+                
+                updateProgress(25);
+                const text = await file.text();
+                updateProgress(50);
+                
+                dispatch(dfActions.setFileUploadProgress({
+                    fileName,
+                    progress: 75,
+                    status: 'loading'
+                }));
+
+                const table = loadTextDataWrapper(uniqueName, text, file.type);
+                updateProgress(90);
+                
+                if (table) {
+                    dispatch(dfActions.loadTable(table));
+                    dispatch(fetchFieldSemanticType(table));
+                    
+                    dispatch(dfActions.setFileUploadProgress({
+                        fileName,
+                        progress: 100,
+                        status: 'complete'
+                    }));
+
+                    dispatch(dfActions.addMessages({
+                        "timestamp": Date.now(),
+                        "type": "success",
+                        "value": `Successfully loaded ${fileName} with ${table.rows.length} rows and ${table.names.length} columns.`
+                    }));
+                } else {
+                    throw new Error('Failed to parse file');
+                }
+            } 
+            // Handle Excel files
+            else if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+                     file.type === 'application/vnd.ms-excel' ||
+                     file.name.endsWith('.xlsx') || 
+                     file.name.endsWith('.xls')) {
+                
+                updateProgress(25);
+                
+                const reader = new FileReader();
+                reader.onprogress = (e) => {
+                    if (e.lengthComputable) {
+                        const progress = Math.round((e.loaded / e.total) * 50) + 25; // 25-75%
+                        updateProgress(progress);
+                    }
+                };
+                
+                reader.onload = (e) => {
+                    const arrayBuffer = e.target?.result as ArrayBuffer;
+                    if (arrayBuffer) {
+                        try {
+                            dispatch(dfActions.setFileUploadProgress({
+                                fileName,
+                                progress: 85,
+                                status: 'loading'
+                            }));
+
+                            const tables = loadBinaryDataWrapper(uniqueName, arrayBuffer);
+                            
+                            if (tables.length > 0) {
+                                for (let table of tables) {
+                                    dispatch(dfActions.loadTable(table));
+                                    dispatch(fetchFieldSemanticType(table));
+                                }
+                                
+                                dispatch(dfActions.setFileUploadProgress({
+                                    fileName,
+                                    progress: 100,
+                                    status: 'complete'
+                                }));
+
+                                dispatch(dfActions.addMessages({
+                                    "timestamp": Date.now(),
+                                    "type": "success",
+                                    "value": `Successfully loaded Excel file ${fileName} with ${tables.length} sheet(s).`
+                                }));
+
+                                // Remove progress after completion
+                                setTimeout(() => {
+                                    dispatch(dfActions.removeFileUploadProgress(fileName));
+                                }, 3000);
+                            } else {
+                                throw new Error('Failed to parse Excel file');
+                            }
+                        } catch (error: any) {
+                            dispatch(dfActions.setFileUploadProgress({
+                                fileName,
+                                progress: 100,
+                                status: 'error'
+                            }));
+
+                            dispatch(dfActions.addMessages({
+                                "timestamp": Date.now(),
+                                "type": "error",
+                                "value": error.message || `Error processing Excel file ${fileName}`
+                            }));
+
+                            // Remove error progress after 5 seconds
+                            setTimeout(() => {
+                                dispatch(dfActions.removeFileUploadProgress(fileName));
+                            }, 5000);
+                        }
+                    }
+                };
+                
+                reader.onerror = () => {
+                    dispatch(dfActions.setFileUploadProgress({
+                        fileName,
+                        progress: 100,
+                        status: 'error'
+                    }));
+
+                    dispatch(dfActions.addMessages({
+                        "timestamp": Date.now(),
+                        "type": "error",
+                        "value": `Error reading Excel file ${fileName}`
+                    }));
+
+                    setTimeout(() => {
+                        dispatch(dfActions.removeFileUploadProgress(fileName));
+                    }, 5000);
+                };
+
+                reader.readAsArrayBuffer(file);
+                return; // Early return for async Excel processing
+            } else {
+                throw new Error(`Unsupported file format: ${fileName}. Please use CSV, TSV, JSON, or Excel files.`);
+            }
+
+            // Remove progress after completion
+            setTimeout(() => {
+                dispatch(dfActions.removeFileUploadProgress(fileName));
+            }, 3000);
+
+        } catch (error: any) {
+            dispatch(dfActions.setFileUploadProgress({
+                fileName,
+                progress: 100,
+                status: 'error'
+            }));
+
+            dispatch(dfActions.addMessages({
+                "timestamp": Date.now(),
+                "type": "error",
+                "value": error.message || `Error processing file ${fileName}`
+            }));
+
+            // Remove error progress after 5 seconds
+            setTimeout(() => {
+                dispatch(dfActions.removeFileUploadProgress(fileName));
+            }, 5000);
+        }
+    };
 
     let handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>): void => {
         const files = event.target.files;
@@ -276,66 +469,7 @@ export const TableUploadDialog: React.FC<TableUploadDialogProps> = ({ buttonElem
         if (files) {
             for (let file of files) {
                 const uniqueName = getUniqueTableName(file.name, existingNames);
-                
-                // Check if file is a text type (csv, tsv, json)
-                if (file.type === 'text/csv' || 
-                    file.type === 'text/tab-separated-values' || 
-                    file.type === 'application/json' ||
-                    file.name.endsWith('.csv') || 
-                    file.name.endsWith('.tsv') || 
-                    file.name.endsWith('.json')) {
-
-                    // Check if file is larger than 5MB
-                    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB in bytes
-                    if (file.size > MAX_FILE_SIZE) {
-                        dispatch(dfActions.addMessages({
-                            "timestamp": Date.now(),
-                            "type": "error",
-                            "value": `File ${file.name} is too large (${(file.size / (1024 * 1024)).toFixed(2)}MB), upload it via DATABASE option instead.`
-                        }));
-                        continue; // Skip this file and process the next one
-                    }
-                    
-                    // Handle text files
-                    file.text().then((text) => {
-                        let table = loadTextDataWrapper(uniqueName, text, file.type);
-                        if (table) {
-                            dispatch(dfActions.loadTable(table));
-                            dispatch(fetchFieldSemanticType(table));
-                        }
-                    });
-                } else if (file.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
-                           file.type === 'application/vnd.ms-excel' ||
-                           file.name.endsWith('.xlsx') || 
-                           file.name.endsWith('.xls')) {
-                    // Handle Excel files
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const arrayBuffer = e.target?.result as ArrayBuffer;
-                        if (arrayBuffer) {
-                            let tables = loadBinaryDataWrapper(uniqueName, arrayBuffer);
-                            for (let table of tables) {
-                                dispatch(dfActions.loadTable(table));
-                                dispatch(fetchFieldSemanticType(table));
-                            }
-                            if (tables.length == 0) {
-                                dispatch(dfActions.addMessages({
-                                    "timestamp": Date.now(),
-                                    "type": "error",
-                                    "value": `Failed to parse Excel file ${file.name}. Please check the file format.`
-                                }));
-                            }
-                        }
-                    };
-                    reader.readAsArrayBuffer(file);
-                } else {
-                    // Unsupported file type
-                    dispatch(dfActions.addMessages({
-                        "timestamp": Date.now(),
-                        "type": "error",
-                        "value": `Unsupported file format: ${file.name}. Please use CSV, TSV, JSON, or Excel files.`
-                    }));
-                }
+                handleFileUploadWithProgress(file, uniqueName);
             }
         }
         if (inputRef.current) {
@@ -360,11 +494,94 @@ export const TableUploadDialog: React.FC<TableUploadDialogProps> = ({ buttonElem
                 sx={{fontSize: "inherit"}} 
                 variant="text" 
                 color="primary" 
-                disabled={disabled}
+                disabled={disabled || fileUploading.length > 0}
                 onClick={() => inputRef.current?.click()}
             >
                 {buttonElement}
             </Button>
+            
+            {/* File Upload Progress Overlay */}
+            {fileUploading.length > 0 && (
+                <Dialog 
+                    open={true} 
+                    disableEscapeKeyDown
+                    sx={{ 
+                        '& .MuiDialog-paper': { 
+                            minWidth: 400, 
+                            maxWidth: 500 
+                        } 
+                    }}
+                >
+                    <DialogTitle>
+                        <Typography variant="h6" component="div">
+                            Uploading Files
+                        </Typography>
+                    </DialogTitle>
+                    <DialogContent>
+                        {fileUploading.map((upload, index) => (
+                            <Box key={upload.fileName} sx={{ mb: 2 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                                    <Typography 
+                                        variant="body2" 
+                                        sx={{ 
+                                            flexGrow: 1, 
+                                            overflow: 'hidden', 
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
+                                        }}
+                                    >
+                                        {upload.fileName}
+                                    </Typography>
+                                    <Typography 
+                                        variant="body2" 
+                                        sx={{ 
+                                            ml: 1,
+                                            color: upload.status === 'complete' ? 'success.main' :
+                                                   upload.status === 'error' ? 'error.main' :
+                                                   'text.secondary'
+                                        }}
+                                    >
+                                        {upload.status === 'parsing' ? 'Parsing...' :
+                                         upload.status === 'loading' ? 'Loading...' :
+                                         upload.status === 'complete' ? 'Complete' :
+                                         upload.status === 'error' ? 'Error' : ''}
+                                    </Typography>
+                                </Box>
+                                <LinearProgress 
+                                    variant="determinate" 
+                                    value={upload.progress}
+                                    sx={{
+                                        height: 6,
+                                        borderRadius: 3,
+                                        '& .MuiLinearProgress-bar': {
+                                            backgroundColor: upload.status === 'error' ? 'error.main' :
+                                                           upload.status === 'complete' ? 'success.main' :
+                                                           'primary.main'
+                                        }
+                                    }}
+                                />
+                                <Typography 
+                                    variant="caption" 
+                                    sx={{ color: 'text.secondary', mt: 0.5, display: 'block' }}
+                                >
+                                    {upload.progress}%
+                                </Typography>
+                            </Box>
+                        ))}
+                    </DialogContent>
+                    {fileUploading.every(upload => upload.status === 'complete' || upload.status === 'error') && (
+                        <DialogActions>
+                            <Button 
+                                onClick={() => dispatch(dfActions.clearAllFileUploadProgress())}
+                                variant="contained"
+                                size="small"
+                            >
+                                Close
+                            </Button>
+                        </DialogActions>
+                    )}
+                </Dialog>
+            )}
         </>
     );
 }

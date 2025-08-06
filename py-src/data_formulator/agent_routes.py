@@ -46,7 +46,36 @@ logger = logging.getLogger(__name__)
 
 agent_bp = Blueprint('agent', __name__, url_prefix='/api/agent')
 
-def get_client(model_config):
+def get_client(model):
+    """
+    Returns a client for the given model config (dict) or model name (str)
+    """
+    # Always normalize model param to dict
+    def _normalize_model_config(model):
+        if isinstance(model, dict):
+            return model
+        elif isinstance(model, str):
+            if model.startswith("gemma") or model.startswith("llama"):
+                return {
+                    "endpoint": "ollama",
+                    "model": model,
+                    "api_key": "",
+                    "api_base": os.getenv("OLLAMA_API_BASE", "http://localhost:11434"),
+                    "api_version": ""
+                }
+            else:
+                return {
+                    "endpoint": "openai",
+                    "model": model,
+                    "api_key": os.getenv("OPENAI_API_KEY", ""),
+                    "api_base": os.getenv("OPENAI_API_BASE", ""),
+                    "api_version": os.getenv("OPENAI_API_VERSION", "")
+                }
+        else:
+            raise ValueError("Invalid model parameter type")
+
+    model_config = _normalize_model_config(model)
+
     for key in model_config:
         model_config[key] = model_config[key].strip()
 

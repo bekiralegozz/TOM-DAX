@@ -46,6 +46,7 @@ import { DataFormulatorState, dfActions, getSessionId } from '../app/dfSlice';
 import { assembleVegaChart, extractFieldsFromEncodingMap, getUrls, prepVisTable  } from '../app/utils';
 import { Chart, EncodingItem, EncodingMap, FieldItem } from '../components/ComponentType';
 import { DictTable } from "../components/ComponentType";
+import { NLPChatContent } from '../components/NLPChat';
 
 import AddchartIcon from '@mui/icons-material/Addchart';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -914,7 +915,7 @@ export const VisualizationViewFC: FC<VisPanelProps> = function VisualizationView
     let finalView = <Box></Box>;
 
     if (visViewMode == "gallery") {
-
+        
         let chartElements = charts.filter(c => !c.intermediate).map((chart, index) => {
 
             let table = getDataTable(chart, tables, charts, conceptShelfItems);
@@ -956,8 +957,6 @@ export const VisualizationViewFC: FC<VisPanelProps> = function VisualizationView
                             border: chart.saved ? '2px solid gold' : '1px solid lightgray', margin: 1, 
                             display: 'flex', flexDirection: 'column', maxWidth: '800px', maxHeight: '600px', overflow:'hidden'}}
                 >
-                    {/* <Box className="vega-thumbnail" id={id} key={`chart-${index}`} sx={{ margin: "auto" }}
-                        onClick={setIndexFunc}></Box> */}
                     {chart.saved ? <Typography key='chart-saved-star-icon' sx={{ position: "absolute", margin: "5px", zIndex: 2, right: 0 }}>
                                         <StarIcon sx={{ color: "gold" }} fontSize="small" />
                                     </Typography> : ""}
@@ -980,6 +979,11 @@ export const VisualizationViewFC: FC<VisPanelProps> = function VisualizationView
                 </Box>
             </Box>
         );
+    } else if (visViewMode == "chat") {
+        // Chat view
+        finalView = <Box sx={{ width: '100%', height: '100%', p: 2 }}>
+            <NLPChatContent />
+        </Box>;
     } else if (visViewMode == "carousel") {
 
         finalView = (

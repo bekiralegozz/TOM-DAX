@@ -42,6 +42,7 @@ import os
 # blueprints
 from data_formulator.tables_routes import tables_bp
 from data_formulator.agent_routes import agent_bp
+from data_formulator.indexing_routes import indexing_bp
 
 
 app = Flask(__name__, static_url_path='', static_folder=os.path.join(APP_ROOT, "dist"))
@@ -97,6 +98,7 @@ app.config['CLI_ARGS'] = {
 # register blueprints
 app.register_blueprint(tables_bp)
 app.register_blueprint(agent_bp)
+app.register_blueprint(indexing_bp, url_prefix='/api/indexing')
 
 print(APP_ROOT)
 

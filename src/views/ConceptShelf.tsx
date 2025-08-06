@@ -14,9 +14,14 @@ import {
     Tooltip,
     Button,
     Divider,
+    IconButton,
+    Collapse,
 } from '@mui/material';
 
 import AddCircleIcon from '@mui/icons-material/AddCircle';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ViewHeadlineIcon from '@mui/icons-material/ViewHeadline';
 
 import { FieldItem, Channel } from '../components/ComponentType';
 
@@ -136,6 +141,8 @@ export const ConceptShelf: FC<ConceptShelfProps> = function ConceptShelf() {
     const tables = useSelector((state: DataFormulatorState) => state.tables);
     const charts = useSelector((state: DataFormulatorState) => state.charts);
 
+    const dataFieldsCollapsed = useSelector((state: DataFormulatorState) => state.dataFieldsCollapsed);
+
     const dispatch = useDispatch();
 
     useEffect(() => { 
@@ -172,35 +179,177 @@ export const ConceptShelf: FC<ConceptShelfProps> = function ConceptShelf() {
 
     return (
         <Box className="concept-shelf">
-            <Box className="view-title-box" sx={{display: "flex", justifyContent: "space-between"}}>
-                <Typography className="view-title" component="h2" sx={{marginTop: "6px"}}>
-                    Data Fields
-                </Typography>
-            </Box>
-            <Box className="data-fields-group">
-                <Box className="data-fields-list">
-                    <Box sx={{display: "block", width: "100%"}}>
-                        <Divider orientation="horizontal" textAlign="left">
-                            <Typography component="h2" sx={{fontSize: "10px"}} color="text.secondary">
-                                field operators
+            {/* Collapsible Header */}
+            <Box sx={{
+                background: 'rgba(255, 255, 255, 0.95)',
+                backdropFilter: 'blur(10px)',
+                borderBottom: '1px solid rgba(102, 126, 234, 0.2)',
+                boxShadow: '0 2px 12px rgba(0, 0, 0, 0.08)',
+                position: 'relative',
+                zIndex: 10,
+                transition: 'all 0.3s ease'
+            }}>
+                {dataFieldsCollapsed ? (
+                    // Collapsed Header - Only Icon
+                    <Box sx={{
+                        display: 'flex',
+                        padding: "8px", 
+                        alignItems: 'center', 
+                        justifyContent: 'center',
+                        minHeight: '44px'
+                    }}>
+                        <Tooltip title="Expand Data Fields">
+                            <Box 
+                                onClick={() => dispatch(dfActions.setDataFieldsCollapsed(false))}
+                                sx={{
+                                    background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                                    borderRadius: '8px',
+                                    p: 1,
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.3s ease',
+                                    '&:hover': {
+                                        transform: 'scale(1.1)',
+                                        boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)'
+                                    }
+                                }}
+                            >
+                                <ViewHeadlineIcon sx={{ fontSize: 16, color: 'white' }} />
+                            </Box>
+                        </Tooltip>
+                    </Box>
+                ) : (
+                    // Expanded Header - Full Content
+                    <Box className="view-title-box" sx={{
+                        display: "flex", 
+                        justifyContent: "space-between", 
+                        alignItems: "center",
+                        padding: "12px 16px",
+                        minHeight: '44px'
+                    }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <Box sx={{
+                                background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                                borderRadius: '8px',
+                                p: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                boxShadow: '0 2px 8px rgba(102, 126, 234, 0.3)'
+                            }}>
+                                <ViewHeadlineIcon sx={{ fontSize: 16, color: 'white' }} />
+                            </Box>
+                            <Typography 
+                                className="view-title" 
+                                component="h2" 
+                                sx={{
+                                    fontSize: '16px',
+                                    fontWeight: 700,
+                                    background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                                    backgroundClip: 'text',
+                                    WebkitBackgroundClip: 'text',
+                                    WebkitTextFillColor: 'transparent',
+                                    margin: 0,
+                                    lineHeight: 1.1
+                                }}
+                            >
+                                Data Fields
                             </Typography>
-                        </Divider>
+                            <Typography 
+                                variant="caption" 
+                                sx={{ 
+                                    color: 'text.secondary',
+                                    fontSize: '11px',
+                                    fontWeight: 500
+                                }}
+                            >
+                                {conceptShelfItems.length} field{conceptShelfItems.length !== 1 ? 's' : ''}
+                            </Typography>
+                        </Box>
+                        
+                        <Tooltip title="Collapse Data Fields">
+                            <IconButton 
+                                size={'small'} 
+                                onClick={() => dispatch(dfActions.setDataFieldsCollapsed(true))}
+                                sx={{
+                                    background: 'rgba(102, 126, 234, 0.1)',
+                                    color: '#667eea',
+                                    borderRadius: 2,
+                                    transition: 'all 0.3s ease',
+                                    '&:hover': {
+                                        background: 'rgba(102, 126, 234, 0.2)',
+                                        transform: 'scale(1.05)'
+                                    }
+                                }}
+                            >
+                                <Box sx={{ fontSize: 16 }}>−</Box>
+                            </IconButton>
+                        </Tooltip>
                     </Box>
-                    <Box sx={{display: "flex", width: "100%", flexWrap: 'wrap'}}>
-                        <OperatorCard operator="count" />
-                        <OperatorCard operator="sum" />
-                        <OperatorCard operator="average" />
-                        <OperatorCard operator="median" />
-                        <OperatorCard operator="max" />
-                        <OperatorCard operator="min" />
-                    </Box>
-                    {groupNames.map(groupName => {
-                        let fields = conceptItemGroups.filter(g => g.group == groupName).map(g => g.field);
-                        return <ConceptGroup key={`concept-group-${groupName}`} groupName={groupName} fields={fields} />
-                    })}
-                    <Divider orientation="horizontal" textAlign="left" sx={{mt: 1}}></Divider>
-                </Box>
+                )}
             </Box>
+
+            {/* Collapsible Content */}
+            <Collapse in={!dataFieldsCollapsed} timeout="auto" unmountOnExit>
+                <Box 
+                    className="data-fields-group"
+                    sx={{
+                        height: 'calc(100vh - 120px)', // Adjust based on header height
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden'
+                    }}
+                >
+                    <Box 
+                        className="data-fields-list"
+                        sx={{
+                            flex: 1,
+                            overflowY: 'auto',
+                            overflowX: 'hidden',
+                            px: 2,
+                            py: 1,
+                            '&::-webkit-scrollbar': {
+                                width: '6px',
+                            },
+                            '&::-webkit-scrollbar-track': {
+                                background: 'rgba(0,0,0,0.05)',
+                                borderRadius: '10px',
+                            },
+                            '&::-webkit-scrollbar-thumb': {
+                                background: 'rgba(102, 126, 234, 0.3)',
+                                borderRadius: '10px',
+                                '&:hover': {
+                                    background: 'rgba(102, 126, 234, 0.5)'
+                                }
+                            }
+                        }}
+                    >
+                        <Box sx={{display: "block", width: "100%", mb: 1}}>
+                            <Divider orientation="horizontal" textAlign="left">
+                                <Typography component="h2" sx={{fontSize: "10px"}} color="text.secondary">
+                                    field operators
+                                </Typography>
+                            </Divider>
+                        </Box>
+                        <Box sx={{display: "flex", width: "100%", flexWrap: 'wrap', mb: 2}}>
+                            <OperatorCard operator="count" />
+                            <OperatorCard operator="sum" />
+                            <OperatorCard operator="average" />
+                            <OperatorCard operator="median" />
+                            <OperatorCard operator="max" />
+                            <OperatorCard operator="min" />
+                        </Box>
+                        {groupNames.map(groupName => {
+                            let fields = conceptItemGroups.filter(g => g.group == groupName).map(g => g.field);
+                            return <ConceptGroup key={`concept-group-${groupName}`} groupName={groupName} fields={fields} />
+                        })}
+                        <Divider orientation="horizontal" textAlign="left" sx={{mt: 1, mb: 2}}></Divider>
+                    </Box>
+                </Box>
+            </Collapse>
         </Box>
     );
 }

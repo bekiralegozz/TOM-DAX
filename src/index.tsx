@@ -23,7 +23,7 @@ root.render(<React.StrictMode>
         <Provider store={store}>
             <PersistGate loading={null} persistor={persistor}>
                 <AuthProvider>
-                    <AppFC />
+                <AppFC />
                 </AuthProvider>
             </PersistGate>
         </Provider>

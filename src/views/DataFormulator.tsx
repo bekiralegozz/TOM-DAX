@@ -19,6 +19,8 @@ import {
     Box,
     Tooltip,
     Button,
+    Fab,
+    IconButton,
 } from '@mui/material';
 
 
@@ -42,6 +44,7 @@ import dfLogo from '../assets/df-logo.png';
 import exampleImageTable from "../assets/example-image-table.png";
 import { ModelSelectionButton } from './ModelSelectionDialog';
 import { DBTableSelectionDialog } from './DBTableManager';
+import ViewHeadlineIcon from '@mui/icons-material/ViewHeadline';
 
 //type AppProps = ConnectedProps<typeof connector>;
 
@@ -51,12 +54,26 @@ export const DataFormulatorFC = ({ }) => {
     const visPaneSize = useSelector((state: DataFormulatorState) => state.visPaneSize);
     const tables = useSelector((state: DataFormulatorState) => state.tables);
     const selectedModelId = useSelector((state: DataFormulatorState) => state.selectedModelId);
+    const dataFieldsCollapsed = useSelector((state: DataFormulatorState) => state.dataFieldsCollapsed);
 
     const dispatch = useDispatch();
 
     useEffect(() => {
         document.title = toolName;
     }, []);
+
+    // Keyboard shortcut for toggling Data Fields (Ctrl/Cmd + D)
+    useEffect(() => {
+        const handleKeydown = (event: KeyboardEvent) => {
+            if ((event.ctrlKey || event.metaKey) && event.key === 'd') {
+                event.preventDefault();
+                dispatch(dfActions.setDataFieldsCollapsed(!dataFieldsCollapsed));
+            }
+        };
+
+        document.addEventListener('keydown', handleKeydown);
+        return () => document.removeEventListener('keydown', handleKeydown);
+    }, [dataFieldsCollapsed, dispatch]);
 
     let conceptEncodingPanel = (
         <Box sx={{display: "flex", flexDirection: "row", width: '100%', flexGrow: 1, overflow: "hidden"}}>
@@ -105,17 +122,56 @@ export const DataFormulatorFC = ({ }) => {
         </SplitPane>);
 
     const fixedSplitPane = ( 
-        <Box sx={{display: 'flex', flexDirection: 'row', height: '100%'}}>
-            <Box sx={{display: 'flex', width: `calc(100% - ${280}px)`}}>
+        <Box sx={{display: 'flex', flexDirection: 'row', height: '100%', position: 'relative'}}>
+            <Box sx={{
+                display: 'flex', 
+                width: dataFieldsCollapsed ? '100%' : `calc(100% - ${280}px)`,
+                transition: 'width 0.3s ease'
+            }}>
             {tables.length > 0 ? 
                     <DataThread />   //<Carousel />
                     : ""} 
                 {visPane}
             </Box>
-            <Box className="data-editor" sx={{width: 280, borderLeft: '1px solid lightgray'}}>
+            <Box 
+                className="data-editor" 
+                sx={{
+                    width: dataFieldsCollapsed ? 0 : 280, 
+                    borderLeft: dataFieldsCollapsed ? 'none' : '1px solid lightgray',
+                    overflow: 'hidden',
+                    transition: 'width 0.3s ease'
+                }}
+            >
                 {conceptEncodingPanel}
                 {/* <InfoPanelFC $tableRef={$tableRef}/> */}
             </Box>
+
+            {/* Floating Button to Restore Data Fields */}
+            {dataFieldsCollapsed && (
+                <Tooltip title="Show Data Fields (Ctrl/Cmd + D)" placement="left">
+                    <Fab
+                        size="small"
+                        onClick={() => dispatch(dfActions.setDataFieldsCollapsed(false))}
+                        sx={{
+                            position: 'absolute',
+                            right: 16,
+                            top: 16,
+                            background: 'linear-gradient(45deg, #667eea, #764ba2)',
+                            color: 'white',
+                            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.4)',
+                            zIndex: 1000,
+                            '&:hover': {
+                                background: 'linear-gradient(45deg, #5a6fd8, #6a4190)',
+                                transform: 'scale(1.1)',
+                                boxShadow: '0 6px 20px rgba(102, 126, 234, 0.6)',
+                            },
+                            transition: 'all 0.3s ease'
+                        }}
+                    >
+                        <ViewHeadlineIcon sx={{ fontSize: 18 }} />
+                    </Fab>
+                </Tooltip>
+            )}
         </Box>);
 
     let exampleMessyText=`Rank	NOC	Gold	Silver	Bronze	Total
